@@ -1,4 +1,5 @@
 from src.utils import nested_len, prod
+from itertools import product
 
 class InconsistentSize(Exception):
     pass
@@ -66,16 +67,33 @@ class Tensor:
                 assert len(vals) > 1, f"The letter {k} was found only in the output. No references in the inputs."
 
         output_dims = [letter_to_dim_size[k] for k in output]
+        remaining_letters = output
+        disappearing_letters = list(set("".join(inputs)).symmetric_difference(set(output)))
         output_size = prod(output_dims)
         output_data = [0 for _ in range(output_size)]
-        for i in range(output_size): # this could happen in parallel
-            output_data[i] 
+        overall_index = 0
+        for output_keys in product(* [range(dim) for dim in output_dims]): # this could happen in parallel
+
+            o = 0
+            letter_to_index = {
+                letter: val for letter, val in zip(remaining_letters, output_keys)
+            }
+            for sum_keys in product(* [range(letter_to_dim_size[letter]) for letter in disappearing_letters]):
+                letter_to_index.update(
+                    {
+                        letter: val for letter, val in zip(disappearing_letters, sum_keys)
+                    }
+                )
+                t = 1
+                for arg, input in zip(args, inputs):
+                    key = tuple([letter_to_index[k] for k in input])
+                    t *= arg.get_item(key)
+                o += t
+            output_data[overall_index] = o
+            overall_index += 1
 
 
 def flatten_list_of_list(list: list | float) -> list[float]:
     if isinstance(list, float):
         return [list]
     return sum([flatten_list_of_list(l) for l in list], [])
-
-
-def rollup
