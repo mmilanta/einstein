@@ -1,4 +1,4 @@
-from src.utils import nested_len
+from src.utils import nested_len, prod
 
 class InconsistentSize(Exception):
     pass
@@ -58,15 +58,24 @@ class Tensor:
         for k, vals in letter_to_vector_axis.items():
             dims = [args[v[0]].dims[v[1]] for v in vals if v[0] >= 0]
             assert len(set(dims)) == 1, f"The letter {k} correspond to axis of different dimensions, namely {dims}."
-            letter_to_dim_size[k] = dim
+            letter_to_dim_size[k] = next(dims)
 
         # check that the output is always connected
         for k, vals in letter_to_vector_axis.items():
             if next([v for v in vals if v[0] == -1]):
                 assert len(vals) > 1, f"The letter {k} was found only in the output. No references in the inputs."
 
+        output_dims = [letter_to_dim_size[k] for k in output]
+        output_size = prod(output_dims)
+        output_data = [0 for _ in range(output_size)]
+        for i in range(output_size): # this could happen in parallel
+            output_data[i] 
+
 
 def flatten_list_of_list(list: list | float) -> list[float]:
     if isinstance(list, float):
         return [list]
     return sum([flatten_list_of_list(l) for l in list], [])
+
+
+def rollup

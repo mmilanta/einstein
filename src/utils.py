@@ -21,3 +21,9 @@ def random_list_tensor(dims: tuple[int]):
         return random.random()
     return [random_list_tensor(dims[1:]) for _ in range(dims[0])]
 
+
+def prod(data: list[int]) -> int:
+    out = 1
+    for d in data:
+        out *= d
+    return out
