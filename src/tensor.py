@@ -59,11 +59,11 @@ class Tensor:
         for k, vals in letter_to_vector_axis.items():
             dims = [args[v[0]].dims[v[1]] for v in vals if v[0] >= 0]
             assert len(set(dims)) == 1, f"The letter {k} correspond to axis of different dimensions, namely {dims}."
-            letter_to_dim_size[k] = next(dims)
+            letter_to_dim_size[k] = dims[0]
 
         # check that the output is always connected
         for k, vals in letter_to_vector_axis.items():
-            if next([v for v in vals if v[0] == -1]):
+            if [v for v in vals if v[0] == -1]:
                 assert len(vals) > 1, f"The letter {k} was found only in the output. No references in the inputs."
 
         output_dims = [letter_to_dim_size[k] for k in output]
@@ -91,6 +91,7 @@ class Tensor:
                 o += t
             output_data[overall_index] = o
             overall_index += 1
+        return Tensor(data=output_data, dims=tuple(output_dims))
 
 
 def flatten_list_of_list(list: list | float) -> list[float]:

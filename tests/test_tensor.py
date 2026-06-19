@@ -3,6 +3,9 @@ from src.tensor import Tensor
 from src.utils import nested_get, nested_len, random_list_tensor
 from itertools import product
 import random
+import numpy as np
+
+ALPHABET = "abcdefghijklmnopqrstuvxyz"
 
 
 @pytest.mark.parametrize("data", [[[1.0, 2.0], [3.0, 4.0]]])
@@ -24,3 +27,38 @@ def test_tensor_auto(iteration: int):
         v = nested_get(data, p)
         assert isinstance(v, float)
         assert v == tensor.get_item(p)
+
+
+@pytest.mark.parametrize("iteration", range(100))
+def test_einsum_2(iteration: int):
+    n_dims1 = random.randint(2, 5)
+    n_dims2 = random.randint(1, n_dims1)
+    output_n_dims = random.randint(0, n_dims1 + n_dims2)
+    #n_dims1, n_dims2, output_n_dims = 3, 2, 1
+    output_letters = [ALPHABET[k] for k in range(output_n_dims)]
+    output_str = "".join(output_letters)
+    input_letters_not_summed = output_letters + ["|"]
+    random.shuffle(input_letters_not_summed)
+    input_letters_not_summed_str = "".join(input_letters_not_summed)
+    input_letters1 = input_letters_not_summed_str.split("|")[0]
+    input_letters2 = input_letters_not_summed_str.split("|")[1]
+    if len(input_letters1) > len(input_letters2):
+        input_letters1, input_letters2 = input_letters2, input_letters1
+    input_letters1 = input_letters1 + "".join([ALPHABET[~k] for k in range(n_dims1 - len(input_letters1))])
+    input_letters2 = input_letters2 + "".join([ALPHABET[~k] for k in range(n_dims2 - len(input_letters2))])
+    command = f"{input_letters1},{input_letters2}->{output_str}"
+    used_letters = set(input_letters1 + input_letters2 + output_str)
+    dims = {k: random.randint(1, n_dims1) for k in used_letters}
+    
+    rl1 = random_list_tensor(tuple([dims[k] for k in input_letters1]))
+    rl2 = random_list_tensor(tuple([dims[k] for k in input_letters2]))
+    input_tensor_1 = Tensor.from_list(rl1)
+    input_tensor_2 = Tensor.from_list(rl2)
+    np1 = np.array(rl1)
+    np2 = np.array(rl2)
+    
+    output_tensor = Tensor.einsum(command, input_tensor_1, input_tensor_2)
+    output_numpy = np.einsum(command, np1, np2)
+    assert output_tensor.dims == tuple([dims[k] for k in output_letters])
+    for np_val, my_val in zip(output_numpy.flatten().tolist(), output_tensor._data):
+        assert (np_val - my_val) ** 2 < 1e-6
