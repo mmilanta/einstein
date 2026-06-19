@@ -30,9 +30,9 @@ def test_tensor_auto(iteration: int):
 
 
 @pytest.mark.parametrize("iteration", range(100))
-def test_einsum_2(iteration: int):
-    n_dims1 = random.randint(2, 5)
-    n_dims2 = random.randint(1, n_dims1)
+def test_einsum(iteration: int):
+    n_dims1 = random.randint(0, 4)
+    n_dims2 = random.randint(0, n_dims1)
     output_n_dims = random.randint(0, n_dims1 + n_dims2)
     #n_dims1, n_dims2, output_n_dims = 3, 2, 1
     output_letters = [ALPHABET[k] for k in range(output_n_dims)]
@@ -48,7 +48,7 @@ def test_einsum_2(iteration: int):
     input_letters2 = input_letters2 + "".join([ALPHABET[~k] for k in range(n_dims2 - len(input_letters2))])
     command = f"{input_letters1},{input_letters2}->{output_str}"
     used_letters = set(input_letters1 + input_letters2 + output_str)
-    dims = {k: random.randint(1, n_dims1) for k in used_letters}
+    dims = {k: random.randint(1, 4) for k in used_letters}
     
     rl1 = random_list_tensor(tuple([dims[k] for k in input_letters1]))
     rl2 = random_list_tensor(tuple([dims[k] for k in input_letters2]))
@@ -58,7 +58,22 @@ def test_einsum_2(iteration: int):
     np2 = np.array(rl2)
     
     output_tensor = Tensor.einsum(command, input_tensor_1, input_tensor_2)
-    output_numpy = np.einsum(command, np1, np2)
+    output_np = np.einsum(command, np1, np2)
     assert output_tensor.dims == tuple([dims[k] for k in output_letters])
-    for np_val, my_val in zip(output_numpy.flatten().tolist(), output_tensor._data):
-        assert (np_val - my_val) ** 2 < 1e-6
+    for np_val, my_val in zip(output_np.flatten().tolist(), output_tensor._data):
+        assert abs(np_val - my_val) < 1e-12
+
+@pytest.mark.parametrize("iteration", range(100))
+def test_sum(iteration: int):
+    n_dims = random.randint(0, 5)
+    dims = [random.randint(1, 5) for _ in range(n_dims)]
+    rl1 = random_list_tensor(dims)
+    rl2 = random_list_tensor(dims)
+    input_tensor_1 = Tensor.from_list(rl1)
+    input_tensor_2 = Tensor.from_list(rl2)
+    np1 = np.array(rl1)
+    np2 = np.array(rl2)
+    output_tensor = Tensor.add(input_tensor_1, input_tensor_2)
+    output_np = np1 + np2
+    for np_val, my_val in zip(output_np.flatten().tolist(), output_tensor._data):
+        assert abs(np_val - my_val) < 1e-12

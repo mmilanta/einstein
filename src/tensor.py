@@ -9,6 +9,7 @@ class Tensor:
     def __init__(self, data: list[float], dims: tuple[int]):
         self.dims = dims
         self._data = data
+        self._validate()
 
     @property
     def size(self) -> int:
@@ -73,7 +74,6 @@ class Tensor:
         output_data = [0 for _ in range(output_size)]
         overall_index = 0
         for output_keys in product(* [range(dim) for dim in output_dims]): # this could happen in parallel
-
             o = 0
             letter_to_index = {
                 letter: val for letter, val in zip(remaining_letters, output_keys)
@@ -93,6 +93,15 @@ class Tensor:
             overall_index += 1
         return Tensor(data=output_data, dims=tuple(output_dims))
 
+    @classmethod
+    def add(cls, *args: Tensor) -> Tensor:
+        for a in args:
+            assert a.dims == args[0].dims
+        data = [
+            sum(a._data[i] for a in args)
+            for i in range(args[0].size)
+        ]
+        return Tensor(data=data, dims=args[0].dims)
 
 def flatten_list_of_list(list: list | float) -> list[float]:
     if isinstance(list, float):
