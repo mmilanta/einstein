@@ -77,3 +77,17 @@ def test_sum(iteration: int):
     output_np = np1 + np2
     for np_val, my_val in zip(output_np.flatten().tolist(), output_tensor._data):
         assert abs(np_val - my_val) < 1e-12
+
+
+def test_trace():
+    tensor = Tensor([1.0, 5.0, 3.0, 4.0], dims=(2, 2))
+    trace = Tensor.einsum("ii->", tensor)
+    assert trace.size == 1.0
+    assert trace.get_item(()) == 5.0
+
+
+def test_transpose():
+    tensor = Tensor([1.0, 5.0, 3.0, 4.0], dims=(2, 2))
+    transpose = Tensor.einsum("ij->ji", tensor)
+    assert transpose.size == 4.0
+    assert transpose._data == [1.0, 3.0, 5.0, 4.0]
