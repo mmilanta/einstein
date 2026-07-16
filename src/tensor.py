@@ -41,7 +41,7 @@ class Tensor:
 
 
     @classmethod
-    def einsum(cls, einsum_command: str, *args: Tensor) -> Tensor:
+    def einsum(cls, einsum_command: str, *args: Tensor, dims: dict[str, int] | None = None) -> Tensor:
         inputs_str, output = einsum_command.split("->")
         inputs = inputs_str.split(",")
         assert len(inputs) == len(args), "input segments sizes must match number of args."
@@ -54,12 +54,14 @@ class Tensor:
         for j, k in enumerate(output):
             letter_to_vector_axis.setdefault(k, []).append((-1, j)) # we reserve -1 fro outputs
 
-        letter_to_dim_size: dict[str, int] = {}
 
         # check dims matching
+        letter_to_dim_size = dims if dims is not None else {}
         for k, vals in letter_to_vector_axis.items():
             dims = [args[v[0]].dims[v[1]] for v in vals if v[0] >= 0]
             assert len(set(dims)) == 1, f"The letter {k} correspond to axis of different dimensions, namely {dims}."
+            if k in letter_to_dim_size:
+                assert letter_to_dim_size[k] == dims[0], f"The letter {k} correspond to dimensions {dims[0]}, but the dimension {letter_to_dim_size[k]} was passed as parameter."
             letter_to_dim_size[k] = dims[0]
 
         # check that the output is always connected
