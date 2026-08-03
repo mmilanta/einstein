@@ -16,7 +16,7 @@ def nested_len(data: list | float) -> list[int]:
     return [len(data)] + nested_len(data[0])
 
 
-def random_list_tensor(dims: tuple[int]):
+def random_list_tensor(dims: tuple[int, ...]):
     if len(dims) == 0:
         return random.random()
     return [random_list_tensor(dims[1:]) for _ in range(dims[0])]

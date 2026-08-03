@@ -21,7 +21,7 @@ def test_tensor_basic(data: list):
 def test_tensor_auto(iteration: int):
     n_dims = random.randint(1, 4)
     dims = [random.randint(1, 4) for _ in range(n_dims)]
-    data = random_list_tensor(dims)
+    data = random_list_tensor(tuple(dims))
     tensor = Tensor.from_list(data)
     for p in product(*[range(d) for d in dims]):
         v = nested_get(data, p)
@@ -67,8 +67,8 @@ def test_einsum(iteration: int):
 def test_sum(iteration: int):
     n_dims = random.randint(0, 5)
     dims = [random.randint(1, 5) for _ in range(n_dims)]
-    rl1 = random_list_tensor(dims)
-    rl2 = random_list_tensor(dims)
+    rl1 = random_list_tensor(tuple(dims))
+    rl2 = random_list_tensor(tuple(dims))
     input_tensor_1 = Tensor.from_list(rl1)
     input_tensor_2 = Tensor.from_list(rl2)
     np1 = np.array(rl1)

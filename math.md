@@ -34,3 +34,11 @@ x_{ii} =z\\
 \nabla_x = I\nabla_z\\
 \nabla_x = [\to ii]\\
 $$
+# math
+
+$$
+Ax = b
+$$
+$$
+x^TAx -bx = 0
+$$
