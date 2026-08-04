@@ -17,10 +17,10 @@ class GTensor:
         output_tensor = GTensor(Tensor.einsum(einsum_command, *[arg._data for arg in args]))
         input_command, output_command = einsum_command.split("->")
         input_commands = input_command.split(",")
-        output_tensor._partial_grad = [args[0]._data, args[1]._data]
+        output_tensor._partial_grad = [args[1]._data, args[0]._data]
         output_tensor._partial_grad_operator = [
-            f"{output_command},{input_commands[0]}->{input_commands[0]}",
-            f"{output_command},{input_commands[1]}->{input_commands[1]}",
+            f"{output_command},{input_commands[1]}->{input_commands[0]}",
+            f"{output_command},{input_commands[0]}->{input_commands[1]}",
         ]
         output_tensor._references=list(args)
         for arg in args:
@@ -54,12 +54,12 @@ class GTensor:
         return out
 
     def backward(self: GTensor, grad: Tensor):
-        print(f"Running backward on {id(self)}-{self._data._data}-{self._grad._data} ({grad._data})")
         self._grad = Tensor.add(grad, self._grad)
         self._forward_count -= 1
         if self._forward_count > 0:
             return
         assert self._references is not None, "References is None"
+        
         for ref, partial_grad, partial_grad_operator in zip(self._references, self._partial_grad, self._partial_grad_operator):
             ref.backward(Tensor.einsum(partial_grad_operator, self._grad, partial_grad))
 

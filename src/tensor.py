@@ -49,7 +49,7 @@ class Tensor:
         # print(f"einsum {einsum_command} {[arg.dims for arg in args]}")
         letter_to_vector_axis: dict[str, list[tuple[int, int]]] = {}
         for i, (input, arg) in enumerate(zip(inputs, args)):
-            assert len(input) == len(arg.dims), f"the {i}-th vector in the input has {len(input)} dimensions, but the einsum string assumes it has {len(arg.dims)}."
+            assert len(input) == len(arg.dims), f"the {i}-th vector in the input has {len(input)} dimensions, but the einsum string assumes it has {len(arg.dims)}. {einsum_command} {[a.dims for a in args]}"
             for j, k in enumerate(input):
                 letter_to_vector_axis.setdefault(k, []).append((i, j))
         for j, k in enumerate(output):
@@ -99,7 +99,7 @@ class Tensor:
     @classmethod
     def add(cls, *args: Tensor) -> Tensor:
         for a in args:
-            assert a.dims == args[0].dims
+            assert a.dims == args[0].dims, f"Found: {[a.dims for a in args]}"
         data = [
             sum(a._data[i] for a in args)
             for i in range(args[0].size)
