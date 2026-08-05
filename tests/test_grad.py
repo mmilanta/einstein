@@ -18,8 +18,9 @@ def test_basic():
 
     lr = 0.1
     for epoch in range(n_epochs):
-        v = GTensor.einsum("i,j->", x, y)
+        v = GTensor.einsum("i,i->", x, y)
         v.backward(Tensor([1.0], dims=()))
+        x._data = Tensor.add(x._data, Tensor.time_constant(x._grad, -lr))
 
         x._data = Tensor.add(x._data, Tensor.einsum("i,->i", x._grad, Tensor(data=[-lr], dims=())))
         print(f"LOSS: {v._data._data}")
@@ -42,18 +43,17 @@ def test_grad_mat_vect():
     Ax = GTensor.einsum("ij,j->i", A, x1)
     y = GTensor.einsum("j,j->", Ax, x2)
     y.backward(Tensor([1.0], dims=()))
-    print(f"A: {id(A)} {rt(A)} ∇{rt(A._grad)}")
-    print(f"x1: {id(x1)} {rt(x1)} ∇{rt(x1._grad)}")
-    print(f"x2: {id(x2)} {rt(x2)} ∇{rt(x2._grad)}")
-    print(f"Ax: {id(Ax)} {rt(Ax)} ∇{rt(Ax._grad)}")
-    print(f"y: {id(y)} {rt(y)} ∇{rt(y._grad)}")
+    assert A._grad._data == [35.0, 42.0, 40.0, 48.0], "Wrong gradient"
+    assert x1._grad._data == [31.0, 46.0], "Wrong gradient"
+    assert x2._grad._data == [17.0, 39.0], "Wrong gradient"
+    assert y._data._data == [431.0], "Wrong forward"
 
 def test_linear_system_via_gradien():
-    n_dims = 10
-    n_epochs = 10000
+    n_dims = 7
+    n_epochs = 100000
     b_np = np.random.random(size=(n_dims))
     Z_np = np.random.random(size=(n_dims, n_dims))
-    A_np = Z_np @ Z_np.T + (0.01 * np.eye(n_dims))
+    A_np = Z_np @ Z_np.T + (0.1 * np.eye(n_dims))
 
     #A_np = np.array([[2.0]])
     #b_np = np.array([1.0])
@@ -93,8 +93,10 @@ def test_linear_system_via_gradien():
         # print(f"v4focus: {v4._partial_grad_operator} {[rt(t) for t in v4._partial_grad]} {[id(t) for t in v4._references]} count: {v4._forward_count}")
         # print(f"X: {rt(x)}-{rt(x._grad)} v0: {rt(v0)}-{rt(v0._grad)} v01: {rt(v01)}-{rt(v01._grad)} v1: {rt(v1)}-{rt(v1._grad)} v2: {rt(v2)}-{rt(v2._grad)} v3: {rt(v3)}-{rt(v3._grad)} v4: {rt(v4)}-{rt(v4._grad)} v5: {rt(v5)}-{rt(v5._grad)} v5: {rt(v5)}-{rt(v5._grad)} v6: {rt(v6)}-{rt(v6._grad)}")
         x_np_pred = np.array(x._data._data)
-        print(f"LOSS: {rt(v6)}. DISTANCE: {float(np.sum(x_np_pred - x_np) ** 2):.4f} ground_truth LOSS: {float(.5 * x_np.T @ A_np @ x_np - x_np.dot(b_np)):.4f}]")
-
+        distance = float(np.sum(x_np_pred - x_np) ** 2)
+        print(f"LOSS: {rt(v6)}. DISTANCE: {distance:.4f} ground_truth LOSS: {float(.5 * x_np.T @ A_np @ x_np - x_np.dot(b_np)):.4f}]")
+        if distance < 1e-4:
+            break
         v6.backward(Tensor([1.0], dims=()))
 
         x._data = Tensor.add(x._data, Tensor.time_constant(x._grad, -lr))
@@ -105,4 +107,5 @@ def test_linear_system_via_gradien():
         x.reset()
 
         #print(f"X: {rt(x)}-{rt(x._grad)} v0: {rt(v0)}-{rt(v0._grad)} v01: {rt(v01)}-{rt(v01._grad)} v1: {rt(v1)}-{rt(v1._grad)} v2: {rt(v2)}-{rt(v2._grad)} v3: {rt(v3)}-{rt(v3._grad)} v4: {rt(v4)}-{rt(v4._grad)} v5: {rt(v5)}-{rt(v5._grad)} v5: {rt(v5)}-{rt(v5._grad)} v6: {rt(v6)}-{rt(v6._grad)}")
-
+    else:
+        raise AssertionError("Method did not converge")
