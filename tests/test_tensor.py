@@ -85,6 +85,17 @@ def test_trace():
     assert trace.size == 1.0
     assert trace.get_item(()) == 5.0
 
+@pytest.mark.parametrize("iteration", range(100))
+def test_to_from_list(iteration: int):
+    n_dims = random.randint(0, 5)
+    dims = [random.randint(1, 5) for _ in range(n_dims)]
+    rl = random_list_tensor(tuple(dims))
+    tensor = Tensor.from_list(rl)
+    new_list = tensor.to_list()
+    new_tensor = Tensor.from_list(new_list)
+    for v1, v2 in zip(tensor._data, new_tensor._data, strict=True):
+        assert v1 == v2
+
 
 def test_transpose():
     tensor = Tensor([1.0, 5.0, 3.0, 4.0], dims=(2, 2))

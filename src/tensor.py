@@ -1,4 +1,4 @@
-from src.utils import nested_len, prod
+from src.utils import nested_len, nested_set, prod
 from itertools import product
 
 class InconsistentSize(Exception):
@@ -39,6 +39,17 @@ class Tensor:
         x = tuple(dims)
         return Tensor(data, tuple(dims))
 
+    def to_list(self):
+        if self.dims == ():
+            return self._data[0]
+        def zeros(dims: tuple[int, ...]):
+            if dims == ():
+                return 0
+            return [zeros(dims[1:]) for _ in range(dims[0])]
+        out = zeros(self.dims)
+        for k in product(*[range(d) for d in self.dims]):
+            nested_set(out, k, self.get_item(k))
+        return out
 
     @classmethod
     def einsum(cls, einsum_command: str, *args: Tensor, dims: dict[str, int] | None = None) -> Tensor:

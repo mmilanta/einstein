@@ -10,6 +10,13 @@ def nested_get(data, keys):
     return n_data
 
 
+def nested_set(data, keys, val):
+    if len(keys) == 1:
+        data[keys[0]] = val
+    else:
+        nested_set(data[keys[0]], keys[1:], val=val)
+
+
 def nested_len(data: list | float) -> list[int]:
     if isinstance(data, float):
         return []
