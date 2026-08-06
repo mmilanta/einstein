@@ -1,4 +1,5 @@
 from src.tensor import Tensor
+from math import log, exp
 
 ALPHABET = "abcdefghijklmnopqrstuvxyz"
 
@@ -85,4 +86,28 @@ def ReLU(input: GTensor) -> GTensor:
     output._references=[input]
 
     input._forward_count += 1
+    return output
+
+def stable_sigmoid(z):
+    if z >= 0:
+        return 1 / (1 + exp(-z))
+    else:
+        exp_z = exp(z)
+        return exp_z / (1 + exp_z)
+
+def CrossEntropy(logits: GTensor, labels: Tensor) -> GTensor:
+    output = GTensor(
+        Tensor(data=[
+            max(logit, 0) - logit * label + log(1 + exp(-abs(logit))) for logit, label in zip(logits._data._data, labels._data)
+        ], dims=logits._data.dims)
+    )
+    output._partial_grad = [Tensor(
+        data=[
+            stable_sigmoid(logit) - label for logit, label in zip(logits._data._data, labels._data)
+        ], dims=logits._data.dims
+    )]
+    x = ALPHABET[:len(output._data.dims)]
+    output._partial_grad_operator=[f"{x},{x}->{x}"]
+    output._references = [logits]
+    logits._forward_count += 1
     return output
