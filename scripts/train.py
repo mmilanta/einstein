@@ -3,6 +3,8 @@ from scripts.model import MLP
 import tqdm
 import datetime
 import json
+import random
+
 
 from src.gradient import GTensor, CrossEntropy
 from src.tensor import Tensor
@@ -14,19 +16,23 @@ def log(line: str, run_id: str):
 
 def main():
     run_id = str(datetime.datetime.now())
+    random.seed(42)
     train_imgs, train_labels = load_data("./data", "train")
-    batch_size = 64
-    lr = 0.005
+    idxs = list(range(get_size(train_imgs)))
+    random.shuffle(idxs)
+    batch_size = 16
+    lr = 0.001
     epochs = 10
-    model = MLP(hidden_sizes=[128], start_size=28*28, end_size=10)
+    model = MLP(hidden_sizes=[256], start_size=28*28, end_size=10)
+    n_steps_checkpoint = 100
     for epoch in range(epochs):
         n_batches = get_size(train_imgs) // batch_size
-        for batch_indx in tqdm.tqdm(range(n_batches), total=n_batches):
+        for step in tqdm.tqdm(range(n_batches), total=n_batches):
             batch_images = [
-                get_image(train_imgs, (batch_indx * batch_size) + i) for i in range(batch_size)
+                get_image(train_imgs, idxs[(step * batch_size) + i]) for i in range(batch_size)
             ]
             batch_labels = [
-                get_label(train_labels, (batch_indx * batch_size) + i) for i in range(batch_size)
+                get_label(train_labels, idxs[(step * batch_size) + i]) for i in range(batch_size)
             ]
             inputs = GTensor(data=Tensor.from_list(batch_images))
 
@@ -41,24 +47,35 @@ def main():
             model.apply_gradient(-lr)
             model.reset()
             loss = sum(loss_vect._data._data) / batch_size
+
             n_correct = 0
-            for label, pred in zip(batch_labels, batch_predictions._data.to_list(), strict=True):
-                for p in pred:
-                    if p > pred[label]:
+            for label, pred, losses in zip(batch_labels, batch_predictions._data.to_list(), loss_vect._data.to_list(), strict=True):
+                this_correct = False
+                for i, p in enumerate(pred):
+                    if p >= pred[label] and i != label:
                         break
                 else:
+                    this_correct = True
                     n_correct += 1
+                
+            #     print("---")
+            #     print(f"   label {label}: {"V" if this_correct else "X"}")
+            #     print(f"   logits [{', '.join([f'{l:.4f}' for l in pred])}]")
+            #     print(f"   losses [{', '.join([f'{l:.4f}' for l in losses])}]")
+            # print(f"LOSS: {loss}")
             with open(f"scripts/logs/{run_id}.txt", "a") as f:
                 f.write(f"{loss}-{n_correct/batch_size}\n")
-        with open(f"scripts/checkpoints/{run_id}-{epoch}.json", "w") as f:
-            f.write(
-                json.dumps(
-                    {
-                        "model_weights": [
-                            w._data.to_list() for w in model.weights
-                        ]
-                    }
-                )
-            )
+
+            if step % n_steps_checkpoint == 0:
+                with open(f"scripts/checkpoints/{run_id}-{epoch}-{step}.json", "w") as f:
+                    f.write(
+                        json.dumps(
+                            {
+                                "model_weights": [
+                                    w._data.to_list() for w in model.weights
+                                ]
+                            }
+                        )
+                    )
 
 main()
