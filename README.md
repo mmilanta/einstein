@@ -1,4 +1,4 @@
-> This repo has been written without the usage of any LLM or autocompleate models.
+> This repo has been written without the usage of any language model.
 
 # Einstein
 
